@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquilanda</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        .bold-text {
+    font-weight: bold;
+}
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: -20px;
+            padding: -20px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+        .left, .right {
+            border: 1px solid rgba(0, 0, 0, 0.192);
+            padding: 50px;
+            margin: 5px;
+        }
+        .left {
+            background-color: rgba(0, 0, 0, 0.067);
+        }
+        .left input[type="text"], .left input[type="file"] {
+            width: 85%;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .left button {
+            width: 12%;
+            padding: 5px;
+            margin-left: 2%;
+            display: inline-block;
+        }
+        .right {
+            width: 300px;
+            text-align: left;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .header img {
+            width: 100px; 
+            height: 100px;
+            margin-right: 400px;
+            margin-top: 10px;
+            margin-bottom: -100px;
+        }
+        .header {
+            background-color: rgba(0, 0, 0, 0.421);
+            color: rgb(255, 255, 255);
+            padding: 10px 0;
+            margin-bottom: -10px;
+            position: relative;
+            font-family: 'Bangers', cursive;
+        }
+        .new-day-button {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.215);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .history-button {
+            position: absolute;
+            right: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.215);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .search-results {
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0);
+            line-height: 1.5;
+        }
+        .search-results p {
+            margin: 0;
+            cursor: pointer;
+        }
+        .invoice-raw {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.119);
+        }
+        .invoice-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px; /* Aumenta el tamaño de la fuente aquí */
+        }
+        .input-field, .select-field {
+            font-size: 20px; /* Aumenta el tamaño de la fuente aquí */
+            font-weight: bold;
+        }
+
+        .total-amount {
+           font-size: 25px; /* Aumenta el tamaño de la fuente aquí */
+           font-weight: bold;
+        }
+        .invoice-item p {
+            margin: 0;
+        }
+        .remove-item, .add-item {
+            color: rgb(0, 0, 0);
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .invoice-container {
+            padding: 0px;
+            background-color: #f9f9f900;
+            margin-top: 0px;
+        }
+        .invoice-container p {
+            margin: 5px 8px;
+        }
+        .total-amount {
+            font-weight: bold;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-field, .select-field {
+            width: calc(100% - 20px);
+            padding: 1px;
+            margin-bottom: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            border-top: 0px;
+            border-right: 0px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0);
+            border-left: 0px;
+        }
+        /* Estilo para impresión térmica */
+        @media print {
+            body * {
+            visibility: hidden;
+        }
+            .right, .right * {
+            visibility: visible;
+        }
+            .right {
+            position: absolute;
+            left:0px;
+            top: 0;
+            width: 58mm;
+            border: none;
+            padding: 0;
+            margin: 25px;
+            font-size: 30px; /* Aumenta el tamaño de la fuente aquí */
+    }
+    .container {
+        display: block;
+    }
+    .left {
+        display: none;
+    }
+}
+
+        /* Estilo para la ventana modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="DinoD.png" alt="Dinosaurio">
+        <h1>ESQUILANDA</h1>
+        <button class="new-day-button" onclick="confirmNewDay()">Nuevo Día</button>
+        <button class="history-button" onclick="showHistory()">Ver Historial</button>
+    </div>
+    <div class="container">
+        <div class="left">
+            <input type="file" id="file-input">
+            <input type="text" id="search" placeholder="buscar...">
+            <div class="search-results" id="results">
+                <!-- Search results will be displayed here -->
+            </div>
+            <div class="invoice-raw" id="invoice">
+                <p></p>
+                <div id="items">
+                    <!-- Selected items will be displayed here -->
+                </div>
+                <p id="total">Total: 0Q</p>
+            </div>
+        </div>
+        <div class="right">
+            <p class="bold-text">TURICENTRO ESQUILANDIA ESQUIPULAS</p>
+            <p id="current-date" class="bold-text"></p>
+            <label for="mesero" class="input-label bold-text">Mesero</label>
+            <input type="text" id="mesero" class="input-field" placeholder="Nombre del mesero">
+            <label for="mesa" class="input-label bold-text">Mesa</label>
+            <input type="text" id="mesa" class="input-field" placeholder="No.Mesa">
+            <div id="invoice-container" class="invoice-container">
+                <!-- Invoice items will be displayed here -->
+            </div>
+            <p class="total-amount" id="total-amount">Total: 0Q</p>
+        </div>
+        
+
+    <button onclick="newInvoice()">Nueva Cuenta</button>
+    <button onclick="exportInventory()">Exportar Inventario</button>
+    <button onclick="window.print()">Imprimir</button>
+
+    <!-- Ventana modal para el historial de ventas -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHistory()">&times;</span>
+            <h2>Historial de Ventas</h2>
+            <div id="historyContent">
+                <!-- Historial de ventas se mostrará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let menuItems = [];
+        let invoiceItems = {};
+        let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+
+        function updateCurrentDate() {
+            const currentDate = new Date();
+            const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}/${(currentDate.getMonth() + 1).toString().padStart(2, '0')}/${currentDate.getFullYear().toString().slice(-2)} ${currentDate.getHours().toString().padStart(2, '0')}:${currentDate.getMinutes().toString().padStart(2, '0')}`;
+            document.getElementById('current-date').textContent = formattedDate;
+        }
+
+        updateCurrentDate();
+        setInterval(updateCurrentDate, 60);
+
+        document.getElementById('search').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            if (searchValue) {
+                const filteredItems = menuItems.filter(item =>
+                    item.producto.toLowerCase().includes(searchValue)
+                );
+                filteredItems.forEach(item => {
+                    const itemElement = document.createElement('p');
+                    itemElement.textContent = `${item.producto} - Q${item.precio}`;
+                    itemElement.addEventListener('click', () => addItem(item));
+                    resultsDiv.appendChild(itemElement);
+                });
+            }
+        });
+
+const fileUrl = 'InventarioTotal.xlsx';
+
+fetch(fileUrl)
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+
+        menuItems = jsonData.slice(1).map(row => ({
+            codigo: row[0],
+            producto: row[1],
+            precio: row[2]
+        }));
+        alert('Inventario cargado correctamente.');
+    })
+    .catch(error => console.error('Error al cargar el archivo:', error));
+
+
+        function addItem(item) {
+            if (invoiceItems[item.producto]) {
+                invoiceItems[item.producto].quantity++;
+            } else {
+                invoiceItems[item.producto] = {
+                    ...item,
+                    quantity: 1
+                };
+            }
+            updateInvoice();
+        }
+
+        function removeItem(productName) {
+            if (invoiceItems[productName].quantity > 1) {
+                invoiceItems[productName].quantity--;
+            } else {
+                delete invoiceItems[productName];
+            }
+            updateInvoice();
+        }
+
+        function updateInvoice() {
+            const itemsDiv = document.getElementById('items');
+            itemsDiv.innerHTML = '';
+
+            let total = 0;
+            for (const [productName, item] of Object.entries(invoiceItems)) {
+                const itemTotal = item.precio * item.quantity;
+                total += itemTotal;
+
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('invoice-item');
+                itemElement.innerHTML = `
+                    <p>${item.producto} - Q${item.precio} . ${item.quantity}</p>
+                    <div>
+                        <span class="add-item" onclick="addItem(invoiceItems['${productName}'])">[+]</span>
+                        <span class="remove-item" onclick="removeItem('${productName}')">[-]</span>
+                    </div>
+                `;
+                itemsDiv.appendChild(itemElement);
+            }
+
+            document.getElementById('total').textContent = `Total: Q${total.toFixed(2)}`;
+            document.getElementById('total-amount').textContent = `Total: Q${total.toFixed(2)}`;
+            updateInvoiceContainer();
+        }
+
+        function newInvoice() {
+            if (Object.keys(invoiceItems).length === 0) return;
+
+            const invoice = {
+                date: new Date().toISOString(),
+                items: invoiceItems,
+                waiter: document.getElementById('mesero').value,
+                table: document.getElementById('mesa').value,
+                total: calculateTotal()
+            };
+
+            invoices.push(invoice);
+            localStorage.setItem('invoices', JSON.stringify(invoices));
+            invoiceItems = {};
+            updateInvoice();
+        }
+
+        function exportInventory() {
+        const data = invoices.map(invoice => {
+        const totalInvoiceAmount = invoice.total;
+        return Object.values(invoice.items).map(item => ({
+            Fecha: new Date(invoice.date).toLocaleString(),
+            Producto: item.producto,
+            Cantidad: item.quantity,
+            Precio: item.precio,
+            Mesero: invoice.waiter,
+            Mesa: invoice.table,
+            'Total Cuenta': totalInvoiceAmount
+            }));
+        }).flat();
+
+        const totalCuentas = data.reduce((sum, row) => sum + parseFloat(row['Total Cuenta']), 0);
+        
+        data.push({
+        Producto: '',
+        Cantidad: '',
+        Precio: '',
+        Mesero: '',
+        Mesa: '',
+        Fecha: '',
+        'Total Cuenta': totalCuentas.toFixed(2)
+         });
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+
+            const cols = [];
+            const keys = Object.keys(data[0]);
+            for (let key of keys) {
+            let maxLength = key.length;
+            data.forEach(row => {
+            maxLength = Math.max(maxLength, row[key].toString().length);
+        });
+            cols.push({ wch: maxLength + 2 }); // Adding a bit of padding
+       }
+            ws['!cols'] = cols;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Cuentas");
+
+            const today = new Date();
+            const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+            XLSX.writeFile(wb, `inventario_${formattedDate}.xlsx`);
+        }
+
+        function calculateTotal() {
+            return Object.values(invoiceItems).reduce((total, item) => total + (item.precio * item.quantity), 0).toFixed(2);
+        }
+
+        function updateInvoiceContainer() {
+    const invoiceContainer = document.getElementById('invoice-container');
+    invoiceContainer.innerHTML = '';
+
+    // Crear el encabezado de la factura
+    const headerElement = document.createElement('div');
+    headerElement.classList.add('invoice-item');
+    headerElement.innerHTML = `
+        <p class="bold-text">PRODUCTO<br></p>
+        <p class="bold-text">CANT</p>
+        <p class="bold-text">TOTAL</p>
+
+    `;
+    invoiceContainer.appendChild(headerElement);
+
+    let total = 0;
+    for (const [productName, item] of Object.entries(invoiceItems)) {
+        const itemTotal = item.precio * item.quantity;
+        total += itemTotal;
+
+        const itemElement = document.createElement('div');
+        itemElement.classList.add('invoice-item');
+        itemElement.innerHTML = `
+            <p class="bold-text">${item.producto}<p>
+            <p class="bold-text">${item.quantity}<p>
+            <p class="bold-text">Q${itemTotal.toFixed(2)}<p>
+        `;
+        invoiceContainer.appendChild(itemElement);
+    }
+
+    const totalElement = document.createElement('p');
+    totalElement.classList.add('total-amount', 'bold-text');
+    totalElement.textContent = `Total: Q${total.toFixed(2)}`;
+}
+
+        function confirmNewDay() {
+            if (confirm("¿Estás seguro de que quieres iniciar un nuevo día? Esto exportará y borrará el historial de ventas actual.")) {
+                exportInventory();
+                invoices = [];
+                localStorage.removeItem('invoices');
+                alert("Nuevo día iniciado. El historial de ventas ha sido exportado y borrado.");
+            }
+        }
+
+        function showHistory() {
+            const historyModal = document.getElementById('historyModal');
+            const historyContent = document.getElementById('historyContent');
+            historyContent.innerHTML = '';
+
+            invoices.forEach((invoice, index) => {
+                const invoiceElement = document.createElement('div');
+                invoiceElement.classList.add('invoice');
+                invoiceElement.innerHTML = `
+                    <p><strong>Factura ${index + 1}</strong> - ${new Date(invoice.date).toLocaleString()}</p>
+                    <p>Mesero: ${invoice.waiter}</p>
+                    <p>Mesa: ${invoice.table}</p>
+                    <p>Items:</p>
+                    <ul>
+                        ${Object.values(invoice.items).map(item => `<li>${item.quantity} x ${item.producto} - Q${item.precio * item.quantity}</li>`).join('')}
+                    </ul>
+                    <p>Total: Q${invoice.total}</p>
+                    <hr>
+                `;
+                historyContent.appendChild(invoiceElement);
+            });
+
+            historyModal.style.display = 'block';
+        }
+
+        function closeHistory() {
+            const historyModal = document.getElementById('historyModal');
+            historyModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const historyModal = document.getElementById('historyModal');
+            if (event.target == historyModal) {
+                historyModal.style.display = 'none';
+            }
+        }
+
+        // Load invoices from localStorage on page load
+        window.onload = function() {
+            updateInvoice();
+        }
+    </script>
+</body>
+</html>
