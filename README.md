@@ -39,4 +39,4 @@ El sistema incluye un módulo de cierre de caja ("Corte del día") que exporta a
 * Excel (para el control de inventario)
 
 ## Cómo ver el proyecto
-[(Aquí puedes pegar el link si ya está publicado en GitHub Pages)](https://danielpazortega1.github.io/menurestsantf/)
+(https://danielpazortega1.github.io/menurestsantf/)
